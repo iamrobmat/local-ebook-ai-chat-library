@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-27] - Pełny system RAG (indexer, searcher, CLI)
+
+#### Dodano
+- **`rag-system/indexer.py`** - moduł indeksowania książek EPUB:
+  - Klasa `BookIndexer` z pełną funkcjonalnością indeksowania
+  - `Chunker` - dzieli tekst na chunki według strategii (rozdziały + paragrafy)
+  - `EmbeddingGenerator` - generuje embeddingi przez OpenAI API z batch processing
+  - `IndexStatus` - zarządza stanem indeksowania w JSON
+  - File hashing do wykrywania zmian
+  - Progress bars z tqdm
+  - Metody: `index_book()`, `index_library()`, `update_index()`, `clear_index()`
+  - Retry logic z exponential backoff
+  - CLI testing mode
+- **`rag-system/searcher.py`** - moduł wyszukiwania semantycznego:
+  - Klasa `BookSearcher` z semantic search przez ChromaDB
+  - Generowanie query embeddings przez OpenAI
+  - Filtrowanie po: autor, tytuł, chunk_type
+  - Cosine similarity ranking
+  - `SearchResult` dataclass z formatowaniem
+  - Collection statistics
+  - Post-filtering dla partial text matches
+  - CLI testing mode
+- **`rag-system/cli.py`** - interfejs użytkownika (Click CLI):
+  - `init` - inicjalizacja i weryfikacja systemu
+  - `index --full/--force/--book` - indeksowanie książek
+  - `update` - aktualizacja z nowymi książkami
+  - `search <query>` - wyszukiwanie semantyczne
+    - Opcje: `--top`, `--level`, `--author`, `--book`, `--full`
+  - `status` - statystyki i stan indeksowania
+  - `clear` - czyszczenie bazy (z potwierdzeniem)
+  - `reindex <book_path>` - reindeksowanie pojedynczej książki
+  - Error handling i user-friendly messages
+  - Progress indicators
+- **`rag-system/README.md`** - pełna dokumentacja użytkownika:
+  - Instrukcje instalacji i konfiguracji
+  - Przykłady użycia wszystkich komend
+  - Architektura systemu
+  - Opis modułów
+  - Rozwiązywanie problemów
+  - Koszty OpenAI API
+- **`.env.example`** - szablon pliku .env z OPENAI_API_KEY
+
+#### Uzasadnienie zmian
+Ukończenie implementacji funkcjonalnego systemu RAG:
+1. **indexer.py** - automatyczne przetwarzanie 200+ książek EPUB z chunking, embeddings, ChromaDB storage
+2. **searcher.py** - semantic search z filtrowaniem i ranking
+3. **cli.py** - user-friendly interface do wszystkich operacji
+4. **README.md** - kompletna dokumentacja dla użytkownika końcowego
+5. **Batch processing** - optymalizacja kosztów OpenAI (100 tekstów/request)
+6. **Incremental updates** - indeksowanie tylko nowych książek
+7. **File hashing** - wykrywanie zmian w istniejących plikach
+
+#### Podsumowanie
+System RAG jest w pełni funkcjonalny i gotowy do użycia. Można indeksować bibliotekę 200+ książek EPUB i wykonywać semantic search w języku polskim i angielskim. Szacowany czas pierwszego indeksowania: 1-1.5h. Koszt: ~$0.50-1.00.
+
+---
+
 ## [2025-10-27] - Podstawowe moduły systemu RAG
 
 #### Dodano
