@@ -154,5 +154,5 @@ Zaimplementowano podstawową infrastrukturę systemu RAG. Kolejne kroki: indexer
 - Configuration management (config.py)
 - Full library indexing (209 EPUB books)
 
-[Unreleased]: https://github.com/yourusername/books-rag/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/books-rag/releases/tag/v0.1.0
+[Unreleased]: https://github.com/iamrobmat/local-epub-ai-chat-library/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/iamrobmat/local-epub-ai-chat-library/releases/tag/v0.1.0
