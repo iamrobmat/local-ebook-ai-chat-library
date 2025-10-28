@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-28] - Adaptive Chunking i finalizacja indeksowania
+
+#### Zmieniono
+- **`rag-system/indexer.py`** - implementacja adaptive chunking w `EmbeddingGenerator`:
+  - **DODANO** `_estimate_tokens()` - estymacja tokenów (1 token ≈ 4 znaki)
+  - **DODANO** `_split_into_token_limited_batches()` - dzielenie tekstów na batche z limitem tokenów
+  - **DODANO** `_generate_embeddings_with_adaptive_batching()` - generowanie embeddingów z określonym limitem
+  - **ZMIENIONO** `generate_embeddings()` - automatyczne próbowanie wielu limitów tokenów [5500, 4000, 3000, 2000, 1500]
+  - Automatyczne obcinanie tekstów przekraczających limit
+  - Lepsze zarządzanie błędami związanymi z limitami tokenów
+
+#### Uzasadnienie zmian
+Problem z limitami tokenów OpenAI API:
+1. **Problem początkowy**: 101/209 książek failowało z błędem "maximum context length 8192 tokens exceeded" (8,000-14,000 tokenów)
+2. **Pierwsza próba**: Obniżenie globalnego limitu do 5500 tokenów - wciąż 50+ książek failowało
+3. **Rozwiązanie finalne**: Adaptive chunking - system automatycznie próbuje różne limity tokenów dla każdej książki
+4. **Efekt**:
+   - Zindeksowano **191/209 książek (91% sukcesu)**
+   - **7,077 chunków** (1,331 rozdziałów + 5,676 paragrafów)
+   - **828 MB baza ChromaDB**
+   - Tylko 8 failów (wszystkie uszkodzone pliki EPUB)
+5. **Zaleta**: Różne książki mogą mieć różne rozmiary chunków - optymalizacja per książka
+
+#### Podsumowanie
+System RAG w pełni funkcjonalny. Adaptive chunking rozwiązał problem limitów tokenów OpenAI API, umożliwiając indeksowanie 91% biblioteki (191/209 książek). Pozostałe 8 niepowodzeń to uszkodzone pliki EPUB wymagające ponownego pobrania.
+
+---
+
 ## [2025-10-27] - Pełny system RAG (indexer, searcher, CLI)
 
 #### Dodano

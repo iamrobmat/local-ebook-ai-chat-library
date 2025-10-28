@@ -205,9 +205,90 @@ class EmbeddingGenerator:
         self.config = config
         self.client = OpenAI(api_key=config.openai.api_key)
 
+    def _estimate_tokens(self, text: str) -> int:
+        """
+        Estimate number of tokens in text.
+        Simple approximation: 1 token ≈ 4 characters for English.
+        """
+        return len(text) // 4
+
+    def _split_into_token_limited_batches(self, texts: List[str], max_tokens: int = 5500) -> List[List[str]]:
+        """
+        Split texts into batches that don't exceed token limit.
+
+        Args:
+            texts: List of text strings
+            max_tokens: Maximum tokens per batch (default 5500, safe margin below 8192 limit)
+
+        Returns:
+            List of batches
+        """
+        batches = []
+        current_batch = []
+        current_tokens = 0
+
+        for text in texts:
+            text_tokens = self._estimate_tokens(text)
+
+            # If single text exceeds limit, truncate it
+            if text_tokens > max_tokens:
+                # Truncate to fit within limit
+                chars_limit = max_tokens * 4
+                text = text[:chars_limit]
+                text_tokens = max_tokens
+
+            # If adding this text would exceed limit, start new batch
+            if current_tokens + text_tokens > max_tokens and current_batch:
+                batches.append(current_batch)
+                current_batch = [text]
+                current_tokens = text_tokens
+            else:
+                current_batch.append(text)
+                current_tokens += text_tokens
+
+        # Add final batch
+        if current_batch:
+            batches.append(current_batch)
+
+        return batches
+
+    def _generate_embeddings_with_adaptive_batching(self, texts: List[str], max_tokens: int) -> List[List[float]]:
+        """
+        Generate embeddings with a specific token limit.
+
+        Args:
+            texts: List of text strings
+            max_tokens: Maximum tokens per batch
+
+        Returns:
+            List of embedding vectors
+        """
+        embeddings = []
+        batches = self._split_into_token_limited_batches(texts, max_tokens=max_tokens)
+
+        for batch in batches:
+            for attempt in range(self.config.openai.max_retries):
+                try:
+                    response = self.client.embeddings.create(
+                        model=self.config.openai.embedding_model,
+                        input=batch
+                    )
+                    batch_embeddings = [item.embedding for item in response.data]
+                    embeddings.extend(batch_embeddings)
+                    break
+
+                except Exception as e:
+                    if attempt == self.config.openai.max_retries - 1:
+                        raise
+                    time.sleep(2 ** attempt)
+
+        return embeddings
+
     def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
         """
-        Generate embeddings for a list of texts.
+        Generate embeddings for a list of texts with adaptive batch sizing.
+
+        Automatically reduces batch size if token limit is exceeded.
 
         Args:
             texts: List of text strings
@@ -215,30 +296,27 @@ class EmbeddingGenerator:
         Returns:
             List of embedding vectors
         """
-        embeddings = []
+        # Try different token limits (adaptive chunking)
+        token_limits = [5500, 4000, 3000, 2000, 1500]
 
-        # Process in batches
-        for i in range(0, len(texts), self.config.openai.batch_size):
-            batch = texts[i:i + self.config.openai.batch_size]
+        last_error = None
+        for max_tokens in token_limits:
+            try:
+                return self._generate_embeddings_with_adaptive_batching(texts, max_tokens)
+            except Exception as e:
+                error_msg = str(e)
+                last_error = e
 
-            # Retry logic
-            for attempt in range(self.config.openai.max_retries):
-                try:
-                    response = self.client.embeddings.create(
-                        model=self.config.openai.embedding_model,
-                        input=batch
-                    )
+                # If it's a token limit error, try with smaller chunks
+                if "maximum context length" in error_msg or "token" in error_msg.lower():
+                    if max_tokens != token_limits[-1]:  # Not the last limit
+                        continue  # Try next smaller limit
 
-                    batch_embeddings = [item.embedding for item in response.data]
-                    embeddings.extend(batch_embeddings)
-                    break
+                # For other errors or last limit - re-raise
+                raise
 
-                except Exception as e:
-                    if attempt == self.config.openai.max_retries - 1:
-                        raise Exception(f"Failed to generate embeddings after {self.config.openai.max_retries} attempts: {e}")
-                    time.sleep(2 ** attempt)  # Exponential backoff
-
-        return embeddings
+        # Should never reach here, but just in case
+        raise last_error
 
 
 class BookIndexer:
