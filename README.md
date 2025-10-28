@@ -1,6 +1,6 @@
-# 🔍 Local EPUB AI Chat Library
+# 🔍 Local eBook AI Chat Library
 
-> Transform your personal EPUB library into an AI-powered semantic search engine. Ask questions, find passages, and explore your books like never before.
+> Transform your personal eBook library into an AI-powered semantic search engine. Ask questions, find passages, and explore your books like never before.
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -39,8 +39,8 @@ Perfect for:
 
 ```bash
 # Clone the repository
-git clone https://github.com/iamrobmat/local-epub-ai-chat-library.git
-cd local-epub-ai-chat-library
+git clone https://github.com/iamrobmat/local-ebook-ai-chat-library.git
+cd local-ebook-ai-chat-library
 
 # Install dependencies
 cd rag-system
@@ -149,7 +149,7 @@ Using OpenAI's `text-embedding-3-small` model:
 ## 🗂️ Project Structure
 
 ```
-local-epub-ai-chat-library/
+local-ebook-ai-chat-library/
 ├── README.md                      # This file
 ├── LICENSE                        # MIT License
 ├── .env.example                   # Template for API key

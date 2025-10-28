@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-28] - Zmiana nazwy projektu i przygotowanie do publikacji
+
+#### Zmieniono
+- **`README.md`** - aktualizacja nazwy projektu z "EPUB" na "eBook":
+  - Zmiana głównego tytułu na "Local eBook AI Chat Library"
+  - Bardziej inkluzywna nazwa (sugeruje wsparcie dla różnych formatów ebook)
+  - Update URL repozytorium: `local-epub-ai-chat-library` → `local-ebook-ai-chat-library`
+  - Update ścieżki klonowania projektu
+- **`LICENSE`** - update copyright z nową nazwą projektu
+- **`rag-system/CHANGELOG.md`** - update URLi GitHub do nowej nazwy repozytorium
+
+#### Uzasadnienie zmian
+Nazwa "eBook" jest bardziej uniwersalna i przyciągająca:
+1. **Szerszy zasięg**: "eBook" sugeruje wsparcie dla różnych formatów, nie tylko EPUB
+2. **Lepsze SEO**: "ebook" jest bardziej popularnym terminem wyszukiwania niż "epub"
+3. **Przyszłościowe**: Łatwiejsze rozszerzenie o PDF, MOBI, AZW3 w przyszłości
+4. **Marketing**: Prostsze i bardziej zrozumiałe dla użytkowników końcowych
+
+---
+
 ## [2025-10-28] - Adaptive Chunking i finalizacja indeksowania
 
 #### Zmieniono
@@ -154,5 +174,5 @@ Zaimplementowano podstawową infrastrukturę systemu RAG. Kolejne kroki: indexer
 - Configuration management (config.py)
 - Full library indexing (209 EPUB books)
 
-[Unreleased]: https://github.com/iamrobmat/local-epub-ai-chat-library/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/iamrobmat/local-epub-ai-chat-library/releases/tag/v0.1.0
+[Unreleased]: https://github.com/iamrobmat/local-ebook-ai-chat-library/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/iamrobmat/local-ebook-ai-chat-library/releases/tag/v0.1.0
