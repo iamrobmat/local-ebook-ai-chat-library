@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-29] - Plan rozwoju v2.0: RAG i Chat Interface
+
+#### Dodano
+- **`claude.md`** - dokumentacja planu rozwoju v2.0:
+  - Plan implementacji RAG (Retrieval-Augmented Generation)
+  - Badania bibliotek CLI chat interface
+  - Rekomendacja: `prompt_toolkit` + `asyncio` + OpenAI
+  - Przykłady kodu dla `answerer.py` i `chat_interface.py`
+  - Timeline implementacji (Sprint 1-3)
+  - Linki do źródeł i przykładów (GMO Engineering, GeminiAI CLI, ai-cli-chat)
+  - Pytania do rozstrzygnięcia (model GPT, UI, formaty)
+
+#### Zmieniono
+- **`claude.md`** - aktualizacja sekcji "Następne kroki":
+  - Status implementacji v1.0 (191/209 książek zindeksowanych)
+  - Plan rozwoju v2.0 z trzema priorytetami
+  - Priorytet 1: RAG z GPT-4 dla generowania odpowiedzi
+  - Priorytet 2: CLI Chat Interface z prompt_toolkit
+  - Priorytet 3: Rozszerzenia (Web UI, PDF, voice input)
+
+#### Uzasadnienie zmian
+Badania i planowanie kolejnych kroków rozwoju:
+1. **Obecny stan**: Semantic search działa, ale brak generowania odpowiedzi (tylko lista fragmentów)
+2. **Cel v2.0**: Transformacja z "search engine" na "AI assistant" z konwersacyjnym interface
+3. **Badania**: Przeanalizowano biblioteki CLI chat (prompt_toolkit, rich, simpleaichat)
+4. **Wybór**: prompt_toolkit + asyncio + OpenAI AsyncClient (produkcyjnie sprawdzone)
+5. **Źródła**: GMO Engineering tutorial (2025), GitHub examples
+6. **Timeline**: ~2-3 dni pracy (RAG Core + Chat Interface + Polish)
+
+#### Podsumowanie
+Plan rozwoju v2.0 jest gotowy. Kolejne kroki: implementacja `answerer.py` (RAG) i `chat_interface.py` (async chat z streaming responses). System będzie wtedy pełnym AI assistant'em działającym w terminalu.
+
+---
+
 ## [2025-10-28] - Zmiana nazwy projektu i przygotowanie do publikacji
 
 #### Zmieniono
