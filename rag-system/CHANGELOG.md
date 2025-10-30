@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-30] - Polskie odpowiedzi, GPT-5-mini i ulepszone cytowanie (v2.1)
+
+#### Zmieniono
+- **`rag-system/answerer.py`** - upgrade modelu i lokalizacja na polski:
+  - **ZMIENIONO** model z `gpt-4o-mini` → `gpt-5-mini`
+  - **DODANO** parametr `temperature: 1` (wymagany przez gpt-5-mini)
+  - **ZMIENIONO** system prompt na polski w `BookAnswerer`:
+    - Instrukcja: "Odpowiadaj ZAWSZE w języku polskim, niezależnie od języka pytania"
+    - Cytowanie z numerami źródeł [1], [2], [3]
+  - **ZMIENIONO** system prompt na polski w `InteractiveChatSession`
+  - **ZMIENIONO** user prompt na polski w metodzie `ask()`
+  - **ZMIENIONO** metoda `clear_history()` używa gpt-5-mini z temperature=1
+- **`rag-system/cli.py`** - pełna polonizacja interfejsu i rozszerzone źródła:
+  - **ZMIENIONO** wszystkie nagłówki i komunikaty komendy `ask` na polski:
+    - "Pytanie:", "Przeszukuję książki i generuję odpowiedź...", "ODPOWIEDŹ:", "ŹRÓDŁA"
+  - **ROZSZERZONO** wyświetlanie źródeł w komendzie `ask`:
+    - Tytuł w cudzysłowach, rozdział, podobieństwo, typ (chapter/paragraph)
+    - **DODANO** podgląd tekstu (200 znaków) dla łatwego odnalezienia fragmentu w książce
+  - **ZMIENIONO** wszystkie nagłówki i komunikaty komendy `chat` na polski:
+    - "Lokalny czat AI z książkami", "Zapytaj mnie o cokolwiek z Twoich książek!"
+    - Komendy: "/sources", "/clear", "exit" z polskimi opisami
+  - **DODANO** polskie komendy wyjścia: 'wyjście', 'wyjdź'
+  - **ZMIENIONO** wszystkie komunikaty błędów na polski
+
+#### Uzasadnienie zmian
+Ulepszenia użytkownika v2.1 - doświadczenie użytkownika w języku polskim:
+1. **Cel**: Pełna lokalizacja systemu dla polskojęzycznych użytkowników
+2. **Model GPT-5-mini**: Najnowszy model OpenAI z lepszą jakością odpowiedzi
+3. **Polskie odpowiedzi**: System prompt wymusza odpowiedzi w języku polskim niezależnie od języka pytania
+4. **Cytowanie z numerami**: GPT używa [1], [2], [3] odpowiadających źródłom - łatwiejsza weryfikacja
+5. **Rozszerzony podgląd źródeł**:
+   - Pokazuje typ fragmentu (rozdział vs paragraf)
+   - Podgląd 200 znaków tekstu źródłowego
+   - Pozwala użytkownikowi łatwo odnaleźć pełny kontekst w książce
+6. **UX**: Wszystkie komunikaty, błędy i instrukcje po polsku
+
+#### Podsumowanie
+System RAG v2.1 jest w pełni spolszczony i używa GPT-5-mini. Użytkownicy otrzymują:
+- Odpowiedzi w języku polskim niezależnie od języka pytania
+- Cytaty z numerami [1], [2], [3] odpowiadającymi źródłom
+- Szczegółowe informacje o źródłach: książka, rozdział, typ, podgląd tekstu
+- Polski interfejs CLI dla komend `ask` i `chat`
+
+**Test:** Zapytanie "Czym jest stoicyzm i jak mogę go zastosować w codziennym życiu?" wygenerowało szczegółową 10-punktową odpowiedź w języku polskim z cytatami [1]-[5] i pełnymi informacjami o 5 źródłach.
+
+---
+
 ## [2025-10-29] - Implementacja RAG z simpleaichat (v2.0)
 
 #### Dodano

@@ -29,11 +29,14 @@ class BookAnswerer:
         # Initialize simpleaichat
         self.ai = AIChat(
             api_key=self.config.openai.api_key,
-            model="gpt-4o-mini",
-            system="""You are a helpful AI assistant that answers questions based on
-passages from books. Always provide accurate answers based on the provided context.
-When quoting, cite the book title and author. Be concise but thorough.""",
-            console=False  # We'll handle console ourselves
+            model="gpt-5-mini",
+            system="""Jesteś pomocnym asystentem AI, który odpowiada na pytania na podstawie
+fragmentów z książek. Zawsze udzielaj dokładnych odpowiedzi opartych na dostarczonym kontekście.
+Odpowiadaj ZAWSZE w języku polskim, niezależnie od języka pytania.
+Gdy cytujesz, używaj numerów źródeł [1], [2], [3] odpowiadających fragmentom książek.
+Bądź zwięzły, ale szczegółowy.""",
+            console=False,  # We'll handle console ourselves
+            params={"temperature": 1}  # gpt-5-mini requires temperature=1
         )
 
     def ask(self, question: str, n_results: int = 5) -> Answer:
@@ -61,14 +64,14 @@ When quoting, cite the book title and author. Be concise but thorough.""",
         context = self._format_context(search_results)
 
         # 3. Generate answer using simpleaichat
-        prompt = f"""Based on the following passages from books, answer this question:
+        prompt = f"""Na podstawie poniższych fragmentów z książek odpowiedz na to pytanie:
 
-Question: {question}
+Pytanie: {question}
 
-Book Passages:
+Fragmenty z książek:
 {context}
 
-Provide a comprehensive answer and cite the books you're quoting from."""
+Udziel wyczerpującej odpowiedzi i cytuj książki używając numerów źródeł [1], [2], [3] itp."""
 
         response = self.ai(prompt)
 
@@ -105,12 +108,14 @@ class InteractiveChatSession:
         # Initialize simpleaichat with console mode for interactive chat
         self.ai = AIChat(
             api_key=self.config.openai.api_key,
-            model="gpt-4o-mini",
-            system="""You are a knowledgeable AI assistant helping users explore their personal book library.
-Answer questions based on passages from the books provided in context.
-Always cite your sources (book title and author).
-Be conversational, helpful, and concise.""",
-            console=False  # We manage the interaction loop
+            model="gpt-5-mini",
+            system="""Jesteś kompetentnym asystentem AI pomagającym użytkownikom eksplorować ich prywatną bibliotekę książek.
+Odpowiadaj na pytania na podstawie fragmentów z książek dostarczonych w kontekście.
+Odpowiadaj ZAWSZE w języku polskim, niezależnie od języka pytania.
+Zawsze cytuj źródła używając numerów [1], [2], [3] oraz podawaj tytuły książek i autorów.
+Bądź konwersacyjny, pomocny i zwięzły.""",
+            console=False,  # We manage the interaction loop
+            params={"temperature": 1}  # gpt-5-mini requires temperature=1
         )
 
         self.conversation_sources = []  # Track all sources used in conversation
@@ -172,9 +177,10 @@ User: {user_input}"""
         # Create new AIChat instance to clear history
         self.ai = AIChat(
             api_key=self.config.openai.api_key,
-            model="gpt-4o-mini",
+            model="gpt-5-mini",
             system=self.ai.system,
-            console=False
+            console=False,
+            params={"temperature": 1}  # gpt-5-mini requires temperature=1
         )
         self.conversation_sources = []
 

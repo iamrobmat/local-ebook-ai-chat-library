@@ -272,15 +272,15 @@ def ask(question, top):
     try:
         from answerer import BookAnswerer
 
-        click.echo(f"Question: {question}\n")
-        click.echo("Searching books and generating answer...\n")
+        click.echo(f"Pytanie: {question}\n")
+        click.echo("Przeszukuję książki i generuję odpowiedź...\n")
 
         answerer = BookAnswerer()
         answer = answerer.ask(question, n_results=top)
 
         # Display answer
         click.echo("=" * 70)
-        click.echo("ANSWER:")
+        click.echo("ODPOWIEDŹ:")
         click.echo("=" * 70)
         click.echo(answer.text)
         click.echo()
@@ -288,16 +288,20 @@ def ask(question, top):
         # Display sources
         if answer.sources:
             click.echo("=" * 70)
-            click.echo(f"SOURCES ({len(answer.sources)} passages):")
+            click.echo(f"ŹRÓDŁA ({len(answer.sources)} fragmentów):")
             click.echo("=" * 70)
             for i, source in enumerate(answer.sources, 1):
-                click.echo(f"\n[{i}] {source.book_title} - {source.book_author}")
+                click.echo(f"\n[{i}] \"{source.book_title}\" - {source.book_author}")
                 if source.chapter_title:
-                    click.echo(f"    Chapter: {source.chapter_title}")
-                click.echo(f"    Similarity: {source.similarity:.3f}")
+                    click.echo(f"    Rozdział: {source.chapter_title}")
+                click.echo(f"    Podobieństwo: {source.similarity:.3f}")
+                click.echo(f"    Typ: {source.chunk_type}")
+                # Show preview of the text
+                preview = source.text[:200] + "..." if len(source.text) > 200 else source.text
+                click.echo(f"    Podgląd: {preview}")
 
     except Exception as e:
-        click.echo(f"✗ Failed to generate answer: {e}", err=True)
+        click.echo(f"✗ Nie udało się wygenerować odpowiedzi: {e}", err=True)
         sys.exit(1)
 
 
@@ -311,13 +315,13 @@ def chat(top):
         session = InteractiveChatSession()
 
         click.echo("\n" + "=" * 70)
-        click.echo("📚 Local eBook AI Chat")
+        click.echo("📚 Lokalny czat AI z książkami")
         click.echo("=" * 70)
-        click.echo("Ask me anything about your books!")
-        click.echo("\nCommands:")
-        click.echo("  /sources  - Show all books referenced in conversation")
-        click.echo("  /clear    - Clear conversation history")
-        click.echo("  exit      - Exit chat")
+        click.echo("Zapytaj mnie o cokolwiek z Twoich książek!")
+        click.echo("\nKomendy:")
+        click.echo("  /sources  - Pokaż wszystkie książki użyte w rozmowie")
+        click.echo("  /clear    - Wyczyść historię rozmowy")
+        click.echo("  exit      - Wyjdź z czatu")
         click.echo("=" * 70 + "\n")
 
         while True:
@@ -329,8 +333,8 @@ def chat(top):
                     continue
 
                 # Handle exit
-                if user_input.lower() in ['exit', 'quit', 'q']:
-                    click.echo("\nGoodbye! 👋")
+                if user_input.lower() in ['exit', 'quit', 'q', 'wyjście', 'wyjdź']:
+                    click.echo("\nDo zobaczenia! 👋")
                     break
 
                 # Handle commands
@@ -338,50 +342,50 @@ def chat(top):
                     if user_input == '/sources':
                         sources = session.get_all_sources()
                         if sources:
-                            click.echo(f"\n📚 Books referenced in this conversation:")
+                            click.echo(f"\n📚 Książki użyte w tej rozmowie:")
                             for i, source in enumerate(sources, 1):
                                 click.echo(f"  {i}. {source}")
                         else:
-                            click.echo("\nNo books referenced yet.")
+                            click.echo("\nŻadne książki nie zostały jeszcze użyte.")
                         click.echo()
                         continue
 
                     elif user_input == '/clear':
                         session.clear_history()
-                        click.echo("\n✓ Conversation history cleared.\n")
+                        click.echo("\n✓ Historia rozmowy wyczyszczona.\n")
                         continue
 
                     else:
-                        click.echo(f"\nUnknown command: {user_input}")
-                        click.echo("Available commands: /sources, /clear, exit\n")
+                        click.echo(f"\nNieznana komenda: {user_input}")
+                        click.echo("Dostępne komendy: /sources, /clear, exit\n")
                         continue
 
                 # Get AI response
                 click.echo()
                 response, sources = session.chat(user_input, n_results=top)
 
-                click.echo(f"🤖 Assistant: {response}\n")
+                click.echo(f"🤖 Asystent: {response}\n")
 
                 # Show sources for this answer
                 if sources:
-                    click.echo(f"   📖 Sources: ", nl=False)
+                    click.echo(f"   📖 Źródła: ", nl=False)
                     source_list = [f"{s.book_title}" for s in sources[:3]]
                     click.echo(", ".join(source_list))
                     if len(sources) > 3:
-                        click.echo(f"   ... and {len(sources) - 3} more")
+                        click.echo(f"   ... i {len(sources) - 3} więcej")
                     click.echo()
 
             except KeyboardInterrupt:
-                click.echo("\n\nInterrupted. Type 'exit' to quit or continue chatting.")
+                click.echo("\n\nPrzerwano. Wpisz 'exit' aby zakończyć lub kontynuuj rozmowę.")
                 click.echo()
                 continue
 
             except EOFError:
-                click.echo("\n\nGoodbye! 👋")
+                click.echo("\n\nDo zobaczenia! 👋")
                 break
 
     except Exception as e:
-        click.echo(f"\n✗ Chat session failed: {e}", err=True)
+        click.echo(f"\n✗ Sesja czatu nie powiodła się: {e}", err=True)
         sys.exit(1)
 
 
