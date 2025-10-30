@@ -1,10 +1,18 @@
+# Vector Database & Embeddings
 chromadb>=0.4.0
+openai>=1.0.0
+
+# EPUB Parsing
 ebooklib>=0.18
 beautifulsoup4>=4.12.0
 html2text>=2020.1.16
-openai>=1.0.0
-python-dotenv>=1.0.0
-click>=8.1.0
-tqdm>=4.66.0
-pydantic>=2.0.0
 lxml>=4.9.0
+
+# RAG & Chat Interface
+simpleaichat>=0.2.0
+
+# CLI & Configuration
+click>=8.1.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+tqdm>=4.66.0

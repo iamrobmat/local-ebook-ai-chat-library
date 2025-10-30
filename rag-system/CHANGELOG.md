@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-29] - Implementacja RAG z simpleaichat (v2.0)
+
+#### Dodano
+- **`rag-system/answerer.py`** - nowy moduł RAG (Retrieval-Augmented Generation):
+  - Klasa `BookAnswerer` - generowanie odpowiedzi GPT-4 na bazie fragmentów książek
+  - Klasa `InteractiveChatSession` - sesja czatu z pamięcią konwersacji
+  - Integracja z `simpleaichat` dla łatwej obsługi OpenAI API
+  - Formatowanie kontekstu z search results
+  - Tracking źródeł w konwersacji
+  - CLI testing mode
+- **`cli.py ask`** - komenda jednokrotnego pytania:
+  - `python cli.py ask "pytanie"` - zadaj pytanie, otrzymaj odpowiedź
+  - Opcja `--top N` dla liczby fragmentów kontekstu
+  - Wyświetlanie źródeł z podobieństwem
+  - Error handling i user-friendly output
+- **`cli.py chat`** - komenda interaktywnego czatu:
+  - `python cli.py chat` - rozpocznij sesję czatu
+  - Wieloturowa konwersacja z pamięcią
+  - Komendy specjalne: `/sources`, `/clear`, `exit`
+  - Wyświetlanie źródeł per odpowiedź
+  - Graceful exit (Ctrl+C, EOF)
+
+#### Zmieniono
+- **`requirements.txt`** - dodano simpleaichat:
+  - `simpleaichat>=0.2.0` dla RAG functionality
+  - Reorganizacja z komentarzami per sekcję
+  - Vector Database, EPUB Parsing, RAG & Chat, CLI & Config
+
+#### Uzasadnienie zmian
+Implementacja pełnego systemu RAG (v2.0):
+1. **Cel**: Transformacja z "semantic search" na "AI assistant" generujący odpowiedzi
+2. **Biblioteka**: `simpleaichat` - prostsza alternatywa vs prompt_toolkit+asyncio
+3. **Czas implementacji**: ~1 godzina (zamiast 2-3 dni)
+4. **Funkcjonalność**:
+   - `ask` - pojedyncze pytania z odpowiedzią + źródła
+   - `chat` - wieloturowa konwersacja z pamięcią
+5. **Model**: GPT-4o-mini (tańszy, szybszy, wystarczająco dobry)
+6. **Koszt**: ~$0.01-0.02 per pytanie
+7. **Test**: Pomyślnie wygenerowano szczegółową odpowiedź o stoicyzmie na bazie 5 fragmentów
+
+#### Podsumowanie
+System RAG działa! Użytkownicy mogą teraz:
+- Zadawać pytania: `python cli.py ask "What is stoicism?"`
+- Czatować interaktywnie: `python cli.py chat`
+- Otrzymywać odpowiedzi GPT-4 na bazie ich książek
+- Widzieć źródła cytowań
+
+**Next:** Możliwy upgrade do prompt_toolkit + asyncio dla lepszego UX (optional).
+
+---
+
 ## [2025-10-29] - Plan rozwoju v2.0: RAG i Chat Interface
 
 #### Dodano
