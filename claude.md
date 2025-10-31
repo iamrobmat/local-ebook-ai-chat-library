@@ -835,3 +835,13 @@ gradio>=3.0.0          # Alternative Web UI (optional)
 - ✅ macOS
 - ✅ Windows
 - ✅ Dowolnym terminalu
+
+---
+
+## 🚀 Następne kroki (v2.2)
+
+1. **PyMuPDF parser** - PDF + MOBI + inne formaty (zamiast tylko EPUB) - 60x szybszy, `pip install PyMuPDF`
+2. **Zapis rozmowy** - `/save filename.md` w chat
+3. **Schowek** - `/copy` dla ostatniej odpowiedzi
+4. **Pasek postępu** - feedback podczas generowania (streaming GPT lub etapy)
+5. **Kolorki** - `rich` library dla ładniejszego terminala

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-31] - Plan rozwoju v2.2 (dokumentacja)
+
+#### Dodano
+- **`claude.md`** - sekcja "🚀 Następne kroki (v2.2)":
+  - Lista 5 planowanych rozszerzeń systemu
+  - **PyMuPDF parser** - wsparcie dla PDF + MOBI (60x szybszy niż pdfplumber)
+  - **Zapis rozmowy** - komenda `/save filename.md` w chat
+  - **Schowek** - komenda `/copy` dla odpowiedzi
+  - **Pasek postępu** - feedback podczas generowania (streaming GPT)
+  - **Kolorki** - biblioteka `rich` dla ładniejszego terminala
+
+#### Uzasadnienie zmian
+Badania z 2025-10-31 wykazały, że PyMuPDF jest 60x szybsza od konkurencji i wspiera wiele formatów (PDF, EPUB, MOBI) przez jedno API. Zaplanowano również usprawnienia UX (zapis rozmów, schowek, progress bar, kolorowanie terminala) dla lepszego doświadczenia użytkownika.
+
+---
+
 ## [2025-10-30] - Polskie odpowiedzi, GPT-5-mini i ulepszone cytowanie (v2.1)
 
 #### Zmieniono
