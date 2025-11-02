@@ -29,14 +29,14 @@ class BookAnswerer:
         # Initialize simpleaichat
         self.ai = AIChat(
             api_key=self.config.openai.api_key,
-            model="gpt-5-mini",
+            model="gpt-5-nano",
             system="""Jesteś pomocnym asystentem AI, który odpowiada na pytania na podstawie
 fragmentów z książek. Zawsze udzielaj dokładnych odpowiedzi opartych na dostarczonym kontekście.
 Odpowiadaj ZAWSZE w języku polskim, niezależnie od języka pytania.
 Gdy cytujesz, używaj numerów źródeł [1], [2], [3] odpowiadających fragmentom książek.
 Bądź zwięzły, ale szczegółowy.""",
             console=False,  # We'll handle console ourselves
-            params={"temperature": 1}  # gpt-5-mini requires temperature=1
+            params={"temperature": 1}  # gpt-5-nano requires temperature=1
         )
 
     def ask(self, question: str, n_results: int = 5) -> Answer:
@@ -108,14 +108,14 @@ class InteractiveChatSession:
         # Initialize simpleaichat with console mode for interactive chat
         self.ai = AIChat(
             api_key=self.config.openai.api_key,
-            model="gpt-5-mini",
+            model="gpt-5-nano",
             system="""Jesteś kompetentnym asystentem AI pomagającym użytkownikom eksplorować ich prywatną bibliotekę książek.
 Odpowiadaj na pytania na podstawie fragmentów z książek dostarczonych w kontekście.
 Odpowiadaj ZAWSZE w języku polskim, niezależnie od języka pytania.
 Zawsze cytuj źródła używając numerów [1], [2], [3] oraz podawaj tytuły książek i autorów.
 Bądź konwersacyjny, pomocny i zwięzły.""",
             console=False,  # We manage the interaction loop
-            params={"temperature": 1}  # gpt-5-mini requires temperature=1
+            params={"temperature": 1}  # gpt-5-nano requires temperature=1
         )
 
         self.conversation_sources = []  # Track all sources used in conversation
@@ -177,10 +177,10 @@ User: {user_input}"""
         # Create new AIChat instance to clear history
         self.ai = AIChat(
             api_key=self.config.openai.api_key,
-            model="gpt-5-mini",
+            model="gpt-5-nano",
             system=self.ai.system,
             console=False,
-            params={"temperature": 1}  # gpt-5-mini requires temperature=1
+            params={"temperature": 1}  # gpt-5-nano requires temperature=1
         )
         self.conversation_sources = []
 

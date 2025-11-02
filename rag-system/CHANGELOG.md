@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-10-31] - Zmiana modelu na GPT-5-nano
+
+#### Zmieniono
+- **`rag-system/answerer.py`** - zmiana modelu AI:
+  - **ZMIENIONO** model z `gpt-5-mini` → `gpt-5-nano` w `BookAnswerer`
+  - **ZMIENIONO** model z `gpt-5-mini` → `gpt-5-nano` w `InteractiveChatSession`
+  - **ZMIENIONO** model w `clear_history()` na `gpt-5-nano`
+  - Zaktualizowano komentarze do nowego modelu
+
+#### Uzasadnienie zmian
+Testowanie GPT-5-nano jako potencjalnie szybszej/tańszej alternatywy dla GPT-5-mini przy zachowaniu jakości odpowiedzi.
+
+---
+
 ## [2025-10-31] - Plan rozwoju v2.2 (dokumentacja)
 
 #### Dodano
