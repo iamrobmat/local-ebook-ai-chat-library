@@ -7,6 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-11-06] - Compile E-book: Tworzenie tematycznych antologii EPUB
+
+#### Dodano
+- **`rag-system/ebook_compiler.py`** - nowy moduł do kompilacji tematycznych e-booków:
+  - Klasa `EbookCompiler` z metodą `compile_ebook()` do tworzenia EPUB z wyników wyszukiwania
+  - Semantic search → grupowanie fragmentów po książkach źródłowych → generowanie EPUB
+  - **Legal safeguards**:
+    - Limit długości fragmentu (default 500 znaków)
+    - Próg podobieństwa (default 0.7)
+    - Pełne cytowania dla każdego fragmentu (tytuł, autor, rozdział, typ, word count)
+    - Rozdział "Legal Disclaimer" z ostrzeżeniem "PERSONAL USE ONLY"
+    - Metadata EPUB: "PERSONAL USE ONLY - Not for distribution"
+  - **EPUB struktura**:
+    - Rozdział wprowadzający (info o zapytaniu, liczba źródeł, statystyki)
+    - Rozdziały pogrupowane po książkach źródłowych (sortowanie wg similarity)
+    - Rozdział Legal Disclaimer
+    - Profesjonalny CSS styling (fragmenty, cytowania, kolory)
+    - Table of Contents (TOC) + Navigation (NCX)
+  - **Parametry**:
+    - `query` - zapytanie semantyczne
+    - `output_path` - ścieżka do wygenerowanego EPUB
+    - `n_results` - liczba fragmentów (default 50)
+    - `min_similarity` - minimalny próg podobieństwa (default 0.7)
+    - `max_fragment_length` - max znaków per fragment (default 500)
+    - `title` - custom tytuł (optional)
+    - `group_by` - "book" lub "topic" (obecnie tylko "book")
+    - `chunk_type` - filtr: "chapter", "paragraph" lub None
+
+- **`rag-system/cli.py`** - nowa komenda CLI `compile-ebook`:
+  - Składnia: `python cli.py compile-ebook "query" output.epub [OPTIONS]`
+  - Opcje:
+    - `--results, -n` - liczba fragmentów (default 50)
+    - `--min-similarity` - próg podobieństwa (default 0.7)
+    - `--max-length` - max długość fragmentu (default 500 chars)
+    - `--title` - custom tytuł e-booka
+    - `--level` - "chapter", "paragraph" lub "both" (default both)
+  - Wyświetla ostrzeżenie "PERSONAL USE ONLY" przy sukcesie
+  - Przykłady użycia w docstringu
+
+#### Zmieniono
+- **`CLAUDE.md`** - zaktualizowano roadmapę v2.2:
+  - Oznaczono feature #6 "Compile E-book" jako **DONE (2025-11-06)**
+  - Dodano szczegóły implementacji: moduły, parametry, testy
+
+#### Testy
+Wygenerowano testowe e-booki:
+1. **psychology_test.epub**:
+   - Query: "psychology"
+   - 11 fragmentów (similarity >= 0.35)
+   - Rozmiar: 11.6 KB
+   - Format EPUB poprawny (`file` command: "EPUB document")
+
+2. **meditation_collection.epub**:
+   - Query: "meditation and mindfulness"
+   - 40 fragmentów (similarity >= 0.3)
+   - Custom title: "Meditation: A Personal Guide"
+   - Rozmiar: 19.0 KB
+
+**Wnioski**: Feature działa poprawnie. EPUBy generują się z proper strukturą, metadata i citations. Legal disclaimer wyświetla się na początku i na końcu e-booka.
+
+#### Uwagi prawne
+**⚠️ WAŻNE**: Ta funkcja jest przeznaczona WYŁĄCZNIE do użytku osobistego, edukacyjnego i badawczego. Wygenerowane e-booki zawierają fragmenty książek chronionych prawem autorskim i NIE MOGĄ być dystrybuowane, udostępniane ani wykorzystywane komercyjnie.
+
+**Legal safeguards w implementacji**:
+- Limit długości fragmentu (fair use compliance)
+- Pełne cytowania źródeł (book, author, chapter)
+- Próg podobieństwa (tylko relevantne fragmenty)
+- Disclaimer w EPUB (wyraźne oznaczenie "PERSONAL USE ONLY")
+- Dokumentacja w README.md i CLI help
+
+#### Uzasadnienie zmian
+1. **Use case**: Tworzenie tematycznych antologii z biblioteki osobistej (np. "wszystko o medytacji", "stoicism collection")
+2. **Legal compliance**: Fragment limits + full citations = fair use dla celów osobistych/edukacyjnych
+3. **ebooklib**: Dojrzała biblioteka do tworzenia EPUB z proper strukturą
+4. **Workflow**: Semantic search (już działa) → grupowanie → format HTML → EPUB generation
+5. **Efekt**: User może stworzyć spersonalizowane e-booki do czytania offline na Kindle/czytnik
+
+#### Podsumowanie
+System RAG v2.2 obsługuje teraz tworzenie tematycznych e-booków EPUB z fragmentów książek. Komenda `compile-ebook` wyszukuje semantycznie fragmenty, grupuje je po książkach źródłowych i generuje profesjonalny EPUB z TOC, metadata, CSS i legal disclaimer. Wbudowane zabezpieczenia prawne (fragment limits, citations, "PERSONAL USE ONLY") zapewniają compliance z fair use dla celów osobistych/edukacyjnych.
+
+---
+
 ## [2025-11-05] - Obsługa formatów PDF i MOBI (60x szybszy parser)
 
 #### Dodano

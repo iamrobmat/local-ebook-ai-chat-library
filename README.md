@@ -203,6 +203,47 @@ Edit `rag-system/config.py` to customize:
 - ✅ No analytics, tracking, or telemetry
 - ⚠️ Keep your `.env` file secure (contains API key)
 
+## ⚖️ Legal Notice
+
+**This tool is designed for personal, educational, and research use only with books you legally own.**
+
+### ✅ Permitted Uses
+
+- **Personal Library Management**: Index and search books from your personal collection
+- **Educational Research**: Create embeddings and perform semantic searches for learning purposes
+- **DRM-Free Content**: Works best with DRM-free EPUB, PDF, and MOBI files you have purchased or obtained legally
+- **Fair Use**: Semantic search and short quotations for personal study fall under fair use in most jurisdictions
+
+### ⚠️ Important Restrictions
+
+- **❌ Do NOT** distribute compiled e-books, databases, or embeddings created from copyrighted content
+- **❌ Do NOT** use this tool to circumvent DRM (Digital Rights Management) protections
+- **❌ Do NOT** use for commercial purposes without proper licensing
+- **❌ Do NOT** share or publish derivative works that contain substantial copyrighted content
+
+### 🔒 DRM Notice
+
+This application **does not** and **will not** include functionality to bypass DRM protections. It works with:
+- DRM-free books from sources like O'Reilly, Manning, Pragmatic Bookshelf
+- Books from Project Gutenberg and other public domain sources
+- Personal documents and notes in EPUB/PDF format
+
+If you have DRM-protected books, you must remove DRM separately (e.g., using Calibre DeDRM plugin for your legally purchased books) **before** using this tool. Note that DRM removal may have legal implications depending on your jurisdiction.
+
+### 📚 Copyright Compliance
+
+- **Your Responsibility**: You are solely responsible for ensuring you have the legal right to process the books you index
+- **Transformative Use**: This tool creates numerical embeddings (vectors) for semantic search, which is generally considered transformative use for personal research
+- **No Redistribution**: The database and any generated content should remain private and not be shared or distributed
+
+### 🌍 Jurisdiction
+
+Copyright and fair use laws vary by country. This tool is designed to comply with fair use principles for personal, educational research. Users must comply with applicable laws in their jurisdiction.
+
+**The authors and contributors of this project assume no liability for misuse of this software. Use responsibly and ethically.**
+
+---
+
 ## 🛠️ Troubleshooting
 
 **"OPENAI_API_KEY not found"**

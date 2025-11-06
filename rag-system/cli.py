@@ -389,5 +389,78 @@ def chat(top):
         sys.exit(1)
 
 
+@cli.command()
+@click.argument('query')
+@click.argument('output', type=click.Path())
+@click.option('--results', '-n', default=50, help='Number of passages to include')
+@click.option('--min-similarity', default=0.7, help='Minimum similarity score (0.0-1.0)')
+@click.option('--max-length', default=500, help='Maximum characters per fragment')
+@click.option('--title', type=str, help='Custom e-book title')
+@click.option('--level', type=click.Choice(['chapter', 'paragraph', 'both']),
+              default='both', help='Include chapters, paragraphs, or both')
+def compile_ebook(query, output, results, min_similarity, max_length, title, level):
+    """Compile a thematic e-book from search results.
+
+    Creates a custom EPUB file with passages relevant to your query.
+
+    Example:
+        python cli.py compile-ebook "stoicism" stoicism.epub
+        python cli.py compile-ebook "meditation techniques" meditation.epub --results 30 --min-similarity 0.75
+
+    ⚠️  LEGAL NOTICE: Generated e-books are for PERSONAL USE ONLY.
+    Do not distribute or share them as they contain copyrighted content.
+    """
+    try:
+        from ebook_compiler import EbookCompiler
+
+        click.echo("=" * 70)
+        click.echo("📚 E-book Compiler")
+        click.echo("=" * 70)
+        click.echo(f"Query: {query}")
+        click.echo(f"Output: {output}")
+        click.echo(f"Max results: {results}")
+        click.echo(f"Min similarity: {min_similarity}")
+        click.echo(f"Max fragment length: {max_length} characters")
+        if level != 'both':
+            click.echo(f"Level: {level}")
+        click.echo()
+
+        # Determine chunk_type filter
+        chunk_type = None if level == 'both' else level
+
+        # Create compiler
+        compiler = EbookCompiler()
+
+        # Compile e-book
+        result_path = compiler.compile_ebook(
+            query=query,
+            output_path=output,
+            n_results=results,
+            min_similarity=min_similarity,
+            max_fragment_length=max_length,
+            title=title,
+            chunk_type=chunk_type
+        )
+
+        click.echo("\n" + "=" * 70)
+        click.echo("✓ E-book compiled successfully!")
+        click.echo(f"  Location: {result_path}")
+        click.echo(f"  Size: {result_path.stat().st_size / 1024:.1f} KB")
+        click.echo()
+        click.echo("⚠️  IMPORTANT: This e-book is for PERSONAL USE ONLY.")
+        click.echo("   Do not distribute or share it as it contains copyrighted content.")
+        click.echo("=" * 70)
+
+    except ValueError as e:
+        click.echo(f"\n✗ {e}", err=True)
+        click.echo("\nTry adjusting --min-similarity or --results parameters.", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"\n✗ Compilation failed: {e}", err=True)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
 if __name__ == '__main__':
     cli()

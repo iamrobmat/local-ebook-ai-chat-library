@@ -850,11 +850,11 @@ gradio>=3.0.0          # Alternative Web UI (optional)
 3. **Zapis rozmowy** - `/save filename.md` w chat
 4. **Schowek** - `/copy` dla ostatniej odpowiedzi
 5. **Kolorki** - `rich` library dla ładniejszego terminala
-6. **Compile E-book** - nowa funkcja: `python cli.py compile-ebook "temat" --output "My_Book.epub" --top 20`
-   - Wyszukaj semantycznie top N fragmentów na dany temat
-   - Wyciągnij najlepsze rozdziały/paragrafy z różnych książek
-   - Skompiluj w EPUB-a z proper strukturą (TOC, źródła, metadata)
-   - Use case: Stwórz "antologię tematyczną" z biblioteki (np. wszystko o metacognition, stoicism, etc.)
-   - Tech: `ebooklib` do tworzenia EPUB, groupowanie po książkach źródłowych
-   - Format: każdy fragment z informacją "Z: [Tytuł] - [Autor], Rozdział X"
-   - Bibliografia na końcu z pełną listą książek źródłowych
+6. ✅ **Compile E-book** - tworzy tematyczne e-booki z fragmentów książek - **DONE (2025-11-06)**
+   - Nowa komenda CLI: `python cli.py compile-ebook "temat" output.epub`
+   - Semantic search → grupowanie po książkach → generowanie EPUB
+   - Proper EPUB struktura: TOC, metadata, CSS styling, citations
+   - Legal safeguards: fragment limit (500 chars), full citations, "PERSONAL USE ONLY" disclaimer
+   - Parametry: `--results`, `--min-similarity`, `--max-length`, `--title`, `--level`
+   - Implementacja: `ebook_compiler.py` z klasą `EbookCompiler`
+   - Testowane: psychology, meditation (11-40 fragmentów, 12-19 KB)
