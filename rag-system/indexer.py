@@ -9,6 +9,7 @@ import hashlib
 import json
 from datetime import datetime
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
 import chromadb
 from chromadb.config import Settings
@@ -17,6 +18,7 @@ from tqdm import tqdm
 
 from config import SystemConfig, get_config
 from epub_parser import EPUBParser, BookMetadata, Chapter
+from document_parser import DocumentParser
 
 
 @dataclass
@@ -347,38 +349,49 @@ class BookIndexer:
                 sha256.update(chunk)
         return sha256.hexdigest()
 
-    def _find_epub_files(self) -> List[Path]:
-        """Find all EPUB files in the books directory."""
-        epub_files = []
+    def _find_book_files(self) -> List[Path]:
+        """Find all book files (EPUB, PDF, MOBI) in the books directory."""
+        book_files = []
 
-        # Search recursively for .epub files
-        for path in self.config.paths.books_root.rglob("*.epub"):
-            # Skip files in rag-system folder
-            if "rag-system" not in str(path):
-                epub_files.append(path)
+        # Supported file extensions
+        extensions = ["*.epub", "*.pdf", "*.mobi"]
 
-        return sorted(epub_files)
+        # Search recursively for book files
+        for ext in extensions:
+            for path in self.config.paths.books_root.rglob(ext):
+                # Skip files in rag-system folder
+                if "rag-system" not in str(path):
+                    book_files.append(path)
+
+        return sorted(book_files)
 
     def _get_book_key(self, metadata: BookMetadata) -> str:
         """Generate unique key for book."""
         return f"{metadata.author}/{metadata.title}"
 
-    def index_book(self, epub_path: Path, force: bool = False) -> Tuple[int, int]:
+    def index_book(self, book_path: Path, force: bool = False) -> Tuple[int, int]:
         """
-        Index a single EPUB book.
+        Index a single book (EPUB, PDF, or MOBI).
 
         Args:
-            epub_path: Path to EPUB file
+            book_path: Path to book file
             force: Force reindexing even if already indexed
 
         Returns:
             Tuple of (chapters_count, paragraphs_count)
         """
         # Calculate file hash
-        file_hash = self._calculate_file_hash(epub_path)
+        file_hash = self._calculate_file_hash(book_path)
 
-        # Parse EPUB
-        parser = EPUBParser(epub_path)
+        # Parse book based on extension
+        ext = book_path.suffix.lower()
+        if ext == '.epub':
+            parser = EPUBParser(book_path)
+        elif ext in ['.pdf', '.mobi']:
+            parser = DocumentParser(book_path)
+        else:
+            raise ValueError(f"Unsupported file format: {ext}")
+
         metadata = parser.get_metadata()
         chapters = parser.extract_chapters()
 
@@ -419,7 +432,7 @@ class BookIndexer:
 
         self.index_status.add_book(
             book_key=book_key,
-            file_path=str(epub_path),
+            file_path=str(book_path),
             file_hash=file_hash,
             chapters=chapter_chunks,
             paragraphs=paragraph_chunks
@@ -430,7 +443,7 @@ class BookIndexer:
 
     def index_library(self, force: bool = False, show_progress: bool = True) -> Dict:
         """
-        Index entire library of EPUB books.
+        Index entire library of books (EPUB, PDF, MOBI).
 
         Args:
             force: Force reindexing of all books
@@ -439,10 +452,10 @@ class BookIndexer:
         Returns:
             Dict with indexing statistics
         """
-        epub_files = self._find_epub_files()
+        book_files = self._find_book_files()
 
         stats = {
-            "total_found": len(epub_files),
+            "total_found": len(book_files),
             "processed": 0,
             "skipped": 0,
             "failed": 0,
@@ -450,11 +463,16 @@ class BookIndexer:
             "total_paragraphs": 0
         }
 
-        iterator = tqdm(epub_files, desc="Indexing books") if show_progress else epub_files
+        iterator = tqdm(book_files, desc="Indexing books") if show_progress else book_files
 
-        for epub_path in iterator:
+        # Use ThreadPoolExecutor for timeout functionality
+        executor = ThreadPoolExecutor(max_workers=1)
+
+        for book_path in iterator:
             try:
-                chapters, paragraphs = self.index_book(epub_path, force=force)
+                # Submit task with 120 second timeout (2 minutes)
+                future = executor.submit(self.index_book, book_path, force)
+                chapters, paragraphs = future.result(timeout=120)
 
                 if chapters == 0 and paragraphs == 0:
                     stats["skipped"] += 1
@@ -469,10 +487,14 @@ class BookIndexer:
                         "skipped": stats["skipped"]
                     })
 
+            except FuturesTimeoutError:
+                stats["failed"] += 1
+                print(f"\nTimeout indexing {book_path.name} (>120s) - skipping")
             except Exception as e:
                 stats["failed"] += 1
-                print(f"\nError indexing {epub_path.name}: {e}")
+                print(f"\nError indexing {book_path.name}: {e}")
 
+        executor.shutdown(wait=False)
         return stats
 
     def update_index(self, show_progress: bool = True) -> Dict:

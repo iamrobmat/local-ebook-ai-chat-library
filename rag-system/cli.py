@@ -16,9 +16,9 @@ from searcher import BookSearcher, format_results
 @click.version_option(version="0.1.0")
 def cli():
     """
-    EPUB Books RAG System - Semantic search for your book library.
+    Books RAG System - Semantic search for your book library.
 
-    Use this CLI to index your EPUB books and perform semantic searches.
+    Use this CLI to index your books (EPUB, PDF, MOBI) and perform semantic searches.
     """
     pass
 
@@ -26,7 +26,7 @@ def cli():
 @cli.command()
 def init():
     """Initialize the system and verify configuration."""
-    click.echo("Initializing EPUB Books RAG System...")
+    click.echo("Initializing Books RAG System...")
 
     try:
         config = get_config()
@@ -65,7 +65,7 @@ def init():
 @click.option('--force', is_flag=True, help='Force reindexing (same as --full)')
 @click.option('--book', type=str, help='Index specific book by path')
 def index(full, force, book):
-    """Index EPUB books in the library."""
+    """Index books (EPUB, PDF, MOBI) in the library."""
     try:
         indexer = BookIndexer()
 

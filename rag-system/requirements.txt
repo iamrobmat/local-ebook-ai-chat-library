@@ -8,6 +8,9 @@ beautifulsoup4>=4.12.0
 html2text>=2020.1.16
 lxml>=4.9.0
 
+# PDF & MOBI Parsing (PyMuPDF is 60x faster!)
+PyMuPDF>=1.23.0
+
 # RAG & Chat Interface
 simpleaichat>=0.2.0
 

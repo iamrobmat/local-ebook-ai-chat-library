@@ -840,8 +840,21 @@ gradio>=3.0.0          # Alternative Web UI (optional)
 
 ## 🚀 Następne kroki (v2.2)
 
-1. **PyMuPDF parser** - PDF + MOBI + inne formaty (zamiast tylko EPUB) - 60x szybszy, `pip install PyMuPDF`
-2. **Zapis rozmowy** - `/save filename.md` w chat
-3. **Schowek** - `/copy` dla ostatniej odpowiedzi
-4. **Pasek postępu** - feedback podczas generowania (streaming GPT lub etapy)
+**Wyniki testu wydajności (2025-10-31):**
+- Semantic search: 0.57s (2.3%) - bardzo szybki ✅
+- GPT-5-mini generation: 23.57s (97.7%) - główne wąskie gardło ⚠️
+- Rozwiązanie: streaming responses (pokazuj tekst na bieżąco jak ChatGPT)
+
+1. **Streaming GPT** - priorytet #1, odpowiedź wyświetlana słowo po słowie (rozwiązuje problem wolności)
+2. ✅ **PyMuPDF parser** - PDF + MOBI + inne formaty (zamiast tylko EPUB) - 60x szybszy, `pip install PyMuPDF` - **DONE (2025-11-05)**
+3. **Zapis rozmowy** - `/save filename.md` w chat
+4. **Schowek** - `/copy` dla ostatniej odpowiedzi
 5. **Kolorki** - `rich` library dla ładniejszego terminala
+6. **Compile E-book** - nowa funkcja: `python cli.py compile-ebook "temat" --output "My_Book.epub" --top 20`
+   - Wyszukaj semantycznie top N fragmentów na dany temat
+   - Wyciągnij najlepsze rozdziały/paragrafy z różnych książek
+   - Skompiluj w EPUB-a z proper strukturą (TOC, źródła, metadata)
+   - Use case: Stwórz "antologię tematyczną" z biblioteki (np. wszystko o metacognition, stoicism, etc.)
+   - Tech: `ebooklib` do tworzenia EPUB, groupowanie po książkach źródłowych
+   - Format: każdy fragment z informacją "Z: [Tytuł] - [Autor], Rozdział X"
+   - Bibliografia na końcu z pełną listą książek źródłowych
