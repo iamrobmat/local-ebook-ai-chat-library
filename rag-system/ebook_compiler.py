@@ -17,6 +17,7 @@ from datetime import datetime
 from collections import defaultdict
 
 from ebooklib import epub
+from openai import OpenAI
 
 from config import SystemConfig, get_config
 from searcher import BookSearcher, SearchResult
@@ -34,6 +35,7 @@ class EbookCompiler:
         """
         self.config = config or get_config()
         self.searcher = BookSearcher(config=self.config)
+        self.openai_client = OpenAI(api_key=self.config.openai.api_key)
 
     def compile_ebook(
         self,
@@ -44,7 +46,8 @@ class EbookCompiler:
         max_fragment_length: int = 500,
         title: Optional[str] = None,
         group_by: str = "book",  # "book" or "topic"
-        chunk_type: Optional[str] = None
+        chunk_type: Optional[str] = None,
+        translate: bool = False  # Translate to Polish
     ) -> Path:
         """
         Compile an e-book from search results.
@@ -81,6 +84,13 @@ class EbookCompiler:
 
         print(f"Found {len(results)} relevant passages (similarity >= {min_similarity})")
 
+        # Translate fragments if requested
+        if translate:
+            print(f"Translating {len(results)} fragments to Polish...")
+            print("This may take several minutes...")
+            results = self._translate_results(results)
+            print("✓ Translation complete!")
+
         # Generate e-book
         book_title = title or self._generate_title(query)
         epub_book = self._create_epub(
@@ -99,6 +109,69 @@ class EbookCompiler:
         print(f"✓ E-book saved to: {output_path}")
 
         return output_path
+
+    def _translate_results(self, results: List[SearchResult]) -> List[SearchResult]:
+        """
+        Translate search results to Polish using GPT-5-nano.
+
+        Args:
+            results: List of search results
+
+        Returns:
+            List of search results with translated text
+        """
+        from tqdm import tqdm
+
+        translated_results = []
+
+        # Translate in batches for efficiency
+        for i, result in enumerate(tqdm(results, desc="Translating"), 1):
+            try:
+                # Truncate text BEFORE translation (max 3000 chars to avoid API limits)
+                text_to_translate = result.text
+                max_length = 3000  # Safe limit for GPT-5-nano
+                if len(text_to_translate) > max_length:
+                    text_to_translate = text_to_translate[:max_length] + "..."
+                    print(f"\n⚠️  Fragment {i} truncated: {len(result.text)} → {len(text_to_translate)} chars")
+
+                # Translate the text
+                response = self.openai_client.chat.completions.create(
+                    model="gpt-4o-mini",  # Using GPT-4o-mini (GPT-5-nano returns empty responses)
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a professional translator. Translate the following English text to Polish. Maintain the original meaning, tone, and formatting. Only output the translation, nothing else."
+                        },
+                        {
+                            "role": "user",
+                            "content": text_to_translate  # Use truncated text
+                        }
+                    ],
+                    temperature=0.3,
+                    max_tokens=4000
+                )
+
+                translated_text = response.choices[0].message.content.strip() if response.choices[0].message.content else ""
+
+                # Create new SearchResult with translated text
+                translated_result = SearchResult(
+                    book_title=result.book_title,
+                    book_author=result.book_author,
+                    chapter_title=result.chapter_title,
+                    chapter_number=result.chapter_number,
+                    chunk_type=result.chunk_type,
+                    text=translated_text,  # Use translated text
+                    similarity=result.similarity,
+                    word_count=result.word_count
+                )
+                translated_results.append(translated_result)
+
+            except Exception as e:
+                print(f"\n⚠️  Translation failed for fragment {i}: {e}")
+                print("Using original English text for this fragment.")
+                translated_results.append(result)  # Keep original if translation fails
+
+        return translated_results
 
     def _generate_title(self, query: str) -> str:
         """
@@ -169,6 +242,10 @@ class EbookCompiler:
         else:
             chapters = self._create_chapters_by_topic(results, max_fragment_length)
 
+        # Create Table of Contents chapter (before content chapters)
+        toc_chapter = self._create_toc_chapter(chapters)
+        book.add_item(toc_chapter)
+
         for chapter in chapters:
             book.add_item(chapter)
 
@@ -177,7 +254,7 @@ class EbookCompiler:
         book.add_item(disclaimer_chapter)
 
         # Define Table of Contents
-        toc_items = [intro_chapter] + chapters + [disclaimer_chapter]
+        toc_items = [intro_chapter, toc_chapter] + chapters + [disclaimer_chapter]
         book.toc = tuple(toc_items)
 
         # Add navigation files
@@ -185,7 +262,7 @@ class EbookCompiler:
         book.add_item(epub.EpubNav())
 
         # Define reading order (spine)
-        book.spine = ["nav", intro_chapter] + chapters + [disclaimer_chapter]
+        book.spine = ["nav", intro_chapter, toc_chapter] + chapters + [disclaimer_chapter]
 
         return book
 
@@ -280,48 +357,116 @@ class EbookCompiler:
             <link rel="stylesheet" href="style/style.css" type="text/css"/>
         </head>
         <body>
-            <h1>Introduction</h1>
+            <h1>Wprowadzenie</h1>
 
             <div class="intro">
-                <p><strong>Search Query:</strong> {query}</p>
-                <p><strong>Generated:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M")}</p>
-                <p><strong>Total Passages:</strong> {len(results)}</p>
-                <p><strong>Source Books:</strong> {len(unique_books)}</p>
-                <p><strong>Average Relevance:</strong> {avg_similarity:.1%}</p>
+                <p><strong>Zapytanie:</strong> {query}</p>
+                <p><strong>Wygenerowano:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M")}</p>
+                <p><strong>Liczba fragmentów:</strong> {len(results)}</p>
+                <p><strong>Książki źródłowe:</strong> {len(unique_books)}</p>
+                <p><strong>Średnie dopasowanie:</strong> {avg_similarity:.1%}</p>
             </div>
 
-            <h2>About This E-book</h2>
+            <h2>O tym e-booku</h2>
             <p>
-                This e-book was automatically compiled from your personal library using
-                semantic search technology. Each passage was selected based on its relevance
-                to your query: <em>"{query}"</em>.
+                Ten e-book został automatycznie skompilowany z Twojej osobistej biblioteki
+                przy użyciu technologii semantic search. Każdy fragment został wybrany na
+                podstawie jego trafności do zapytania: <em>"{query}"</em>.
             </p>
 
             <p>
-                The passages are organized by source book, with full citations provided for
-                each fragment. All content is sourced from books in your personal collection.
+                Fragmenty są zorganizowane według książek źródłowych, z pełnymi cytatami
+                dla każdego fragmentu. Cała treść pochodzi z książek z Twojej osobistej kolekcji.
             </p>
 
-            <h2>How to Use</h2>
+            <h2>Jak używać</h2>
             <ul>
-                <li>Each chapter represents passages from a single source book</li>
-                <li>Passages are sorted by relevance (similarity score)</li>
-                <li>Citations include book title, author, and chapter information</li>
-                <li>Use this as a starting point for deeper exploration of topics</li>
+                <li>Każdy rozdział zawiera fragmenty z jednej książki źródłowej</li>
+                <li>Fragmenty są sortowane według trafności (współczynnik podobieństwa)</li>
+                <li>Cytaty zawierają tytuł książki, autora i informacje o rozdziale</li>
+                <li>Użyj tego jako punktu wyjścia do głębszej eksploracji tematów</li>
             </ul>
 
             <div class="disclaimer">
-                <strong>⚠️ Legal Notice:</strong> This e-book is for PERSONAL USE ONLY.
-                It contains excerpts from copyrighted works in your personal library.
-                Do not distribute or share this file.
+                <strong>⚠️ Uwaga prawna:</strong> Ten e-book jest TYLKO DO UŻYTKU OSOBISTEGO.
+                Zawiera fragmenty dzieł chronionych prawem autorskim z Twojej osobistej biblioteki.
+                Nie rozpowszechniaj ani nie udostępniaj tego pliku.
             </div>
         </body>
         </html>
         """
 
         chapter = epub.EpubHtml(
-            title="Introduction",
+            title="Wprowadzenie",
             file_name="intro.xhtml",
+            lang="pl"
+        )
+        chapter.content = content
+
+        return chapter
+
+    def _create_toc_chapter(self, chapters: List[epub.EpubHtml]) -> epub.EpubHtml:
+        """
+        Create Table of Contents chapter as a full page.
+
+        Args:
+            chapters: List of content chapters
+
+        Returns:
+            EpubHtml chapter with TOC
+        """
+        # Build TOC items
+        toc_items_html = []
+        for i, chapter in enumerate(chapters, 1):
+            toc_items_html.append(
+                f'<li><a href="{chapter.file_name}">{i}. {chapter.title}</a></li>'
+            )
+
+        content = f"""
+        <html>
+        <head>
+            <link rel="stylesheet" href="style/style.css" type="text/css"/>
+            <style>
+                .toc {{
+                    margin: 2em 0;
+                }}
+                .toc h1 {{
+                    text-align: center;
+                    margin-bottom: 1em;
+                }}
+                .toc ol {{
+                    list-style: decimal;
+                    padding-left: 2em;
+                    line-height: 1.8;
+                }}
+                .toc li {{
+                    margin: 0.5em 0;
+                }}
+                .toc a {{
+                    text-decoration: none;
+                    color: #2c3e50;
+                }}
+                .toc a:hover {{
+                    text-decoration: underline;
+                    color: #3498db;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="toc">
+                <h1>Spis treści</h1>
+                <p><em>Łącznie {len(chapters)} książek źródłowych</em></p>
+                <ol>
+                    {''.join(toc_items_html)}
+                </ol>
+            </div>
+        </body>
+        </html>
+        """
+
+        chapter = epub.EpubHtml(
+            title="Spis treści",
+            file_name="toc_page.xhtml",
             lang="pl"
         )
         chapter.content = content
@@ -355,6 +500,15 @@ class EbookCompiler:
             # Sort by similarity (highest first)
             book_results.sort(key=lambda x: x.similarity, reverse=True)
 
+            # Get chapter titles from results for TOC
+            chapter_titles = list(set(r.chapter_title for r in book_results))
+            if len(chapter_titles) == 1:
+                # Single chapter - use its title
+                toc_title = f"{chapter_titles[0]} ({title})"
+            else:
+                # Multiple chapters - use book title with count
+                toc_title = f"{title} ({len(chapter_titles)} rozdziałów)"
+
             content = self._format_book_chapter(
                 author=author,
                 title=title,
@@ -363,7 +517,7 @@ class EbookCompiler:
             )
 
             chapter = epub.EpubHtml(
-                title=f"{title} - {author}",
+                title=toc_title,
                 file_name=f"chapter_{i:03d}.xhtml",
                 lang="pl"
             )
@@ -402,14 +556,17 @@ class EbookCompiler:
             # Escape HTML special characters
             text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
+            # Translate chunk type to Polish
+            chunk_type_pl = "Rozdział" if result.chunk_type == "chapter" else "Paragraf"
+
             # Format as HTML
             fragment_html = f"""
             <div class="fragment">
                 <p>{text}</p>
                 <div class="citation">
-                    <span class="similarity">Relevance: {result.similarity:.1%}</span><br/>
-                    Chapter: {result.chapter_title} (Ch. {result.chapter_number})<br/>
-                    Type: {result.chunk_type.capitalize()}, {result.word_count} words
+                    <span class="similarity">Trafność: {result.similarity:.1%}</span><br/>
+                    Rozdział: {result.chapter_title} (Rozdz. {result.chapter_number})<br/>
+                    Typ: {chunk_type_pl}, {result.word_count} słów
                 </div>
             </div>
             """
@@ -423,9 +580,9 @@ class EbookCompiler:
         </head>
         <body>
             <h1>{title}</h1>
-            <h2>by {author}</h2>
+            <h2>autor: {author}</h2>
 
-            <p><em>{len(results)} relevant passage(s) found</em></p>
+            <p><em>Znaleziono {len(results)} trafny(ch) fragment(ów)</em></p>
 
             {''.join(fragments_html)}
         </body>
@@ -469,51 +626,50 @@ class EbookCompiler:
             <link rel="stylesheet" href="style/style.css" type="text/css"/>
         </head>
         <body>
-            <h1>Legal Disclaimer</h1>
+            <h1>Zastrzeżenia prawne</h1>
 
             <div class="disclaimer">
-                <h2>⚠️ Personal Use Only</h2>
+                <h2>⚠️ Tylko do użytku osobistego</h2>
                 <p>
-                    This e-book was automatically compiled from your personal library for
-                    <strong>PERSONAL, EDUCATIONAL, and RESEARCH purposes ONLY</strong>.
+                    Ten e-book został automatycznie skompilowany z Twojej osobistej biblioteki
+                    <strong>WYŁĄCZNIE do celów OSOBISTYCH, EDUKACYJNYCH i BADAWCZYCH</strong>.
                 </p>
 
-                <h2>Copyright Notice</h2>
+                <h2>Prawa autorskie</h2>
                 <p>
-                    All passages in this e-book are excerpts from copyrighted works.
-                    Each passage is clearly cited with its source (book title, author,
-                    and chapter).
+                    Wszystkie fragmenty w tym e-booku to fragmenty dzieł chronionych prawem autorskim.
+                    Każdy fragment jest wyraźnie oznaczony źródłem (tytuł książki, autor i rozdział).
                 </p>
 
                 <p>
-                    <strong>You may NOT:</strong>
+                    <strong>NIE wolno Ci:</strong>
                 </p>
                 <ul>
-                    <li>Distribute this e-book to others</li>
-                    <li>Share this e-book publicly online or offline</li>
-                    <li>Use this e-book for commercial purposes</li>
-                    <li>Remove or modify citation information</li>
+                    <li>Dystrybuować tego e-booka innym osobom</li>
+                    <li>Udostępniać tego e-booka publicznie online lub offline</li>
+                    <li>Używać tego e-booka do celów komercyjnych</li>
+                    <li>Usuwać lub modyfikować informacji o źródłach</li>
                 </ul>
 
                 <h2>Fair Use</h2>
                 <p>
-                    This compilation is believed to constitute fair use under copyright law
-                    for personal educational purposes. Fragment sizes are limited, and all
-                    sources are properly cited.
+                    Ta kompilacja jest uznawana za fair use zgodnie z prawem autorskim
+                    dla osobistych celów edukacyjnych. Rozmiary fragmentów są ograniczone,
+                    a wszystkie źródła są odpowiednio cytowane.
                 </p>
 
-                <h2>Your Responsibility</h2>
+                <h2>Twoja odpowiedzialność</h2>
                 <p>
-                    You are responsible for ensuring that your use of this e-book complies
-                    with applicable copyright laws in your jurisdiction. The compiler tool
-                    assumes no liability for misuse.
+                    Jesteś odpowiedzialny za zapewnienie, że Twoje użycie tego e-booka
+                    jest zgodne z obowiązującymi przepisami prawa autorskiego w Twojej jurysdykcji.
+                    Narzędzie kompilatora nie ponosi odpowiedzialności za niewłaściwe użycie.
                 </p>
 
-                <h2>Generated By</h2>
+                <h2>Wygenerowano przez</h2>
                 <p>
                     <strong>Local E-book AI Chat Library</strong><br/>
-                    An open-source tool for personal library management<br/>
-                    Generated: {generated_time}
+                    Narzędzie open-source do zarządzania osobistą biblioteką<br/>
+                    Wygenerowano: {generated_time}
                 </p>
             </div>
         </body>
@@ -521,7 +677,7 @@ class EbookCompiler:
         """
 
         chapter = epub.EpubHtml(
-            title="Legal Disclaimer",
+            title="Zastrzeżenia prawne",
             file_name="disclaimer.xhtml",
             lang="pl"
         )

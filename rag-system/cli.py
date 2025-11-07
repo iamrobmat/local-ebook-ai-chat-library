@@ -398,7 +398,8 @@ def chat(top):
 @click.option('--title', type=str, help='Custom e-book title')
 @click.option('--level', type=click.Choice(['chapter', 'paragraph', 'both']),
               default='both', help='Include chapters, paragraphs, or both')
-def compile_ebook(query, output, results, min_similarity, max_length, title, level):
+@click.option('--translate', is_flag=True, help='Translate fragments to Polish using GPT-4o-mini (costs ~$0.10, takes ~10 min for 30 fragments)')
+def compile_ebook(query, output, results, min_similarity, max_length, title, level, translate):
     """Compile a thematic e-book from search results.
 
     Creates a custom EPUB file with passages relevant to your query.
@@ -439,7 +440,8 @@ def compile_ebook(query, output, results, min_similarity, max_length, title, lev
             min_similarity=min_similarity,
             max_fragment_length=max_length,
             title=title,
-            chunk_type=chunk_type
+            chunk_type=chunk_type,
+            translate=translate
         )
 
         click.echo("\n" + "=" * 70)
