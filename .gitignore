@@ -70,3 +70,15 @@ rag-system/data/index_status.json
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Test files and debug
+test_*.epub
+meta_*.epub
+metacognition_*.epub
+metadata.db
+metadata_db_prefs_backup.json
+
+# Debug scripts
+rag-system/test_*.py
+rag-system/inspect_epub.py
+rag-system/extract_chapter.py
