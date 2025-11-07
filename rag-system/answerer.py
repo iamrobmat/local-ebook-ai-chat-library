@@ -1,11 +1,11 @@
 """
 Answerer module for generating AI responses based on book passages.
-Uses simpleaichat for easy integration with OpenAI GPT models.
+Uses OpenAI client with streaming for real-time responses.
 """
-from typing import List, Optional
+from typing import List, Optional, Iterator
 from dataclasses import dataclass
 
-from simpleaichat import AIChat
+from openai import OpenAI
 
 from config import SystemConfig, get_config
 from searcher import BookSearcher, SearchResult
@@ -25,19 +25,13 @@ class BookAnswerer:
     def __init__(self, config: Optional[SystemConfig] = None):
         self.config = config or get_config()
         self.searcher = BookSearcher(self.config)
+        self.client = OpenAI(api_key=self.config.openai.api_key)
 
-        # Initialize simpleaichat
-        self.ai = AIChat(
-            api_key=self.config.openai.api_key,
-            model="gpt-5-nano",
-            system="""Jesteś pomocnym asystentem AI, który odpowiada na pytania na podstawie
+        self.system_prompt = """Jesteś pomocnym asystentem AI, który odpowiada na pytania na podstawie
 fragmentów z książek. Zawsze udzielaj dokładnych odpowiedzi opartych na dostarczonym kontekście.
 Odpowiadaj ZAWSZE w języku polskim, niezależnie od języka pytania.
 Gdy cytujesz, używaj numerów źródeł [1], [2], [3] odpowiadających fragmentom książek.
-Bądź zwięzły, ale szczegółowy.""",
-            console=False,  # We'll handle console ourselves
-            params={"temperature": 1}  # gpt-5-nano requires temperature=1
-        )
+Bądź zwięzły, ale szczegółowy."""
 
     def ask(self, question: str, n_results: int = 5) -> Answer:
         """
@@ -63,7 +57,7 @@ Bądź zwięzły, ale szczegółowy.""",
         # 2. Format context from search results
         context = self._format_context(search_results)
 
-        # 3. Generate answer using simpleaichat
+        # 3. Generate answer using OpenAI
         prompt = f"""Na podstawie poniższych fragmentów z książek odpowiedz na to pytanie:
 
 Pytanie: {question}
@@ -73,11 +67,20 @@ Fragmenty z książek:
 
 Udziel wyczerpującej odpowiedzi i cytuj książki używając numerów źródeł [1], [2], [3] itp."""
 
-        response = self.ai(prompt)
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+
+        answer_text = response.choices[0].message.content
 
         # 4. Return answer with sources
         return Answer(
-            text=response,
+            text=answer_text,
             sources=search_results,
             query=question
         )
@@ -99,37 +102,32 @@ Udziel wyczerpującej odpowiedzi i cytuj książki używając numerów źródeł
 
 
 class InteractiveChatSession:
-    """Interactive chat session with conversation memory."""
+    """Interactive chat session with conversation memory and streaming responses."""
 
     def __init__(self, config: Optional[SystemConfig] = None):
         self.config = config or get_config()
         self.searcher = BookSearcher(self.config)
+        self.client = OpenAI(api_key=self.config.openai.api_key)
 
-        # Initialize simpleaichat with console mode for interactive chat
-        self.ai = AIChat(
-            api_key=self.config.openai.api_key,
-            model="gpt-5-nano",
-            system="""Jesteś kompetentnym asystentem AI pomagającym użytkownikom eksplorować ich prywatną bibliotekę książek.
+        self.system_prompt = """Jesteś kompetentnym asystentem AI pomagającym użytkownikom eksplorować ich prywatną bibliotekę książek.
 Odpowiadaj na pytania na podstawie fragmentów z książek dostarczonych w kontekście.
 Odpowiadaj ZAWSZE w języku polskim, niezależnie od języka pytania.
 Zawsze cytuj źródła używając numerów [1], [2], [3] oraz podawaj tytuły książek i autorów.
-Bądź konwersacyjny, pomocny i zwięzły.""",
-            console=False,  # We manage the interaction loop
-            params={"temperature": 1}  # gpt-5-nano requires temperature=1
-        )
+Bądź konwersacyjny, pomocny i zwięzły."""
 
+        self.conversation_history = []  # Track message history
         self.conversation_sources = []  # Track all sources used in conversation
 
-    def chat(self, user_input: str, n_results: int = 5) -> tuple[str, List[SearchResult]]:
+    def chat_stream(self, user_input: str, n_results: int = 5) -> tuple[Iterator[str], List[SearchResult]]:
         """
-        Process a chat message with conversation context.
+        Process a chat message with streaming response (shows text as it's generated).
 
         Args:
             user_input: User's message
             n_results: Number of book passages to retrieve
 
         Returns:
-            Tuple of (assistant_response, search_results)
+            Tuple of (text_stream_iterator, search_results)
         """
         # 1. Search for relevant passages
         search_results = self.searcher.search(user_input, n_results=n_results)
@@ -140,16 +138,54 @@ Bądź konwersacyjny, pomocny i zwięzły.""",
         # 3. Format context
         if search_results:
             context = self._format_context(search_results)
-            prompt = f"""Context from books:
+            user_message = f"""Context from books:
 {context}
 
 User: {user_input}"""
         else:
-            prompt = user_input
+            user_message = user_input
 
-        # 4. Get response (simpleaichat maintains conversation history)
-        response = self.ai(prompt)
+        # 4. Add to conversation history
+        self.conversation_history.append({"role": "user", "content": user_message})
 
+        # 5. Stream response from GPT
+        messages = [{"role": "system", "content": self.system_prompt}] + self.conversation_history
+
+        stream = self.client.chat.completions.create(
+            model="gpt-4o-mini",  # Fast and reliable
+            messages=messages,
+            temperature=0.7,
+            stream=True
+        )
+
+        # 6. Return iterator that yields chunks and saves full response
+        def generate_and_save():
+            full_response = ""
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    text = chunk.choices[0].delta.content
+                    full_response += text
+                    yield text
+
+            # Save full response to history after streaming completes
+            self.conversation_history.append({"role": "assistant", "content": full_response})
+
+        return generate_and_save(), search_results
+
+    def chat(self, user_input: str, n_results: int = 5) -> tuple[str, List[SearchResult]]:
+        """
+        Process a chat message (non-streaming version for compatibility).
+
+        Args:
+            user_input: User's message
+            n_results: Number of book passages to retrieve
+
+        Returns:
+            Tuple of (assistant_response, search_results)
+        """
+        # Use streaming internally but collect full response
+        stream, search_results = self.chat_stream(user_input, n_results)
+        response = "".join(stream)
         return response, search_results
 
     def _format_context(self, results: List[SearchResult]) -> str:
@@ -174,14 +210,7 @@ User: {user_input}"""
 
     def clear_history(self):
         """Clear conversation history and start fresh."""
-        # Create new AIChat instance to clear history
-        self.ai = AIChat(
-            api_key=self.config.openai.api_key,
-            model="gpt-5-nano",
-            system=self.ai.system,
-            console=False,
-            params={"temperature": 1}  # gpt-5-nano requires temperature=1
-        )
+        self.conversation_history = []
         self.conversation_sources = []
 
 

@@ -360,11 +360,18 @@ def chat(top):
                         click.echo("Dostępne komendy: /sources, /clear, exit\n")
                         continue
 
-                # Get AI response
+                # Get AI response with streaming
                 click.echo()
-                response, sources = session.chat(user_input, n_results=top)
+                click.echo("🤖 Asystent: ", nl=False)
 
-                click.echo(f"🤖 Asystent: {response}\n")
+                # Stream the response word by word (flush to show immediately)
+                import sys
+                stream, sources = session.chat_stream(user_input, n_results=top)
+                for chunk in stream:
+                    click.echo(chunk, nl=False)
+                    sys.stdout.flush()  # Force immediate output
+
+                click.echo("\n")
 
                 # Show sources for this answer
                 if sources:

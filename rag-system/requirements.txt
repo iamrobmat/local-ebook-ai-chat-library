@@ -11,9 +11,6 @@ lxml>=4.9.0
 # PDF & MOBI Parsing (PyMuPDF is 60x faster!)
 PyMuPDF>=1.23.0
 
-# RAG & Chat Interface
-simpleaichat>=0.2.0
-
 # CLI & Configuration
 click>=8.1.0
 python-dotenv>=1.0.0
