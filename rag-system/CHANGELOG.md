@@ -7,6 +7,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-11-07] - Streaming responses dla natychmiastowego feedbacku (v2.2)
+
+#### Zmieniono
+- **`rag-system/answerer.py`** - przebudowa na streaming z OpenAI:
+  - **USUNIĘTO** `simpleaichat` dependency - zastąpione bezpośrednim OpenAI client
+  - **DODANO** `chat_stream()` method zwracający `Iterator[str]` dla streaming responses
+  - **ZMIENIONO** model z `gpt-5-nano` na `gpt-4o-mini` (gpt-5-nano zwracał puste odpowiedzi)
+  - Manualne zarządzanie historią konwersacji (`conversation_history: List[dict]`)
+  - Generator function dla streamingu z automatycznym zapisem pełnej odpowiedzi
+  - Zachowano kompatybilność: `chat()` method używa `chat_stream()` wewnętrznie
+
+- **`rag-system/cli.py`** - streaming w chat command:
+  - **ZMIENIONO** `session.chat()` na `session.chat_stream()`
+  - **DODANO** `sys.stdout.flush()` dla natychmiastowego wyświetlania chunków
+  - Pętla iterująca po stream chunks z real-time display
+
+- **`rag-system/requirements.txt`** - cleanup dependencies:
+  - **USUNIĘTO** `simpleaichat>=0.2.0` (nie jest już potrzebne)
+
+#### Uzasadnienie zmian
+**Problem:** Chat odpowiadał po ~24 sekundach bez żadnego feedbacku - użytkownik nie wiedział czy system działa.
+
+**Rozwiązanie:** Streaming responses (jak ChatGPT):
+1. Odpowiedź pojawia się natychmiast słowo po słowie (~158 chunków)
+2. Całkowity czas: ~5 sekund (vs 24s poprzednio)
+3. Użytkownik widzi postęp w real-time
+4. GPT-4o-mini szybszy i bardziej niezawodny niż gpt-5-nano
+
+**Test:** `python test_streaming.py` - ✓ Stream completed in 5.29s, 158 chunks, 3 sources
+
+#### Podsumowanie
+Masywna poprawa UX - chat teraz responsywny i interaktywny. Użytkownik nie czeka w ciemno, tylko widzi tekst pojawiający się w czasie rzeczywistym.
+
+---
+
+## [2025-11-07] - Polskie tłumaczenia dla e-booków (v2.1)
+
+#### Dodano
+- **`rag-system/ebook_compiler.py`** - funkcja tłumaczenia fragmentów:
+  - **DODANO** `_translate_results()` method dla tłumaczenia na polski
+  - **DODANO** parametr `translate: bool` w `compile_ebook()`
+  - Smart truncation do 3000 znaków przed tłumaczeniem (ochrona przed API limits)
+  - Model: `gpt-4o-mini` (gpt-5-nano zwracał puste odpowiedzi ❌)
+  - Automatyczny fallback do angielskiego przy błędach
+  - Progress bar z `tqdm` dla widoczności postępu
+  - **DODANO** pełnostronicowy spis treści (Table of Contents)
+  - **DODANO** polskie etykiety UI: "Spis treści", "Trafność", "Rozdział", "Wprowadzenie"
+  - Ulepszone TOC titles pokazujące nazwy rozdziałów (nie tylko tytuły książek)
+
+- **`rag-system/cli.py`** - flaga `--translate`:
+  - Składnia: `python cli.py compile-ebook "query" output.epub --translate`
+  - Help text: "Translate fragments to Polish using GPT-4o-mini (costs ~$0.10, takes ~10 min for 30 fragments)"
+  - Przekazuje parametr do `EbookCompiler.compile_ebook()`
+
+#### Zmieniono
+- **`rag-system/ebook_compiler.py`** - struktura EPUB:
+  - **DODANO** `_create_toc_chapter()` dla pełnostronicowego spisu treści
+  - **ZMIENIONO** wszystkie etykiety na polskie (Wprowadzenie, Spis treści, Zastrzeżenia prawne)
+  - **ZMIENIONO** TOC titles: pokazują nazwy rozdziałów + liczbę rozdziałów
+  - **ZMIENIONO** spine order: `intro → toc → chapters → disclaimer`
+
+#### Uzasadnienie zmian
+**Discovery podczas implementacji:**
+1. ❌ GPT-5-nano zwracał puste stringi (`content: ''`) - przełączono na GPT-4o-mini ✓
+2. ❌ Brak obcięcia tekstu przed tłumaczeniem → 27K znaków → API error
+3. ✓ Rozwiązanie: truncate do 3000 znaków PRZED wywołaniem API
+
+**Koszt:**
+- GPT-4o-mini: ~$0.10 dla 30 fragmentów
+- Czas: ~10 minut (vs 40 min przewidywanych dla gpt-5-nano)
+- Szybkość: ~25 sekund per fragment
+
+**Test:** `python cli.py compile-ebook "metacognition" test.epub --translate --results 3`
+- ✓ Tłumaczenie: 3/3 fragmenty w 72s
+- ✓ EPUB wygenerowany: 11.0 KB
+- ✓ Weryfikacja treści: polski tekst obecny w rozdziałach ✓
+
+#### Podsumowanie
+Pełne wsparcie dla polskich e-booków z tłumaczeniem on-demand. GPT-4o-mini okazał się lepszym wyborem niż gpt-5-nano (niezawodność + szybkość).
+
+---
+
+## [2025-11-07] - Aktualizacja roadmapy projektu
+
+#### Zmieniono
+- **`ROADMAP.md`** - status funkcji:
+  - **ZMIENIONO** punkt 1 (Streaming GPT) → oznaczony jako ✅ DONE (v2.2, commit `8df9aff`)
+  - **DODANO** punkt 2: "Interactive Chat Interface (Claude Code style)"
+    - Problem: Za długie komendy (`python cli.py ask "pytanie"`)
+    - Rozwiązanie: `python cli.py` wchodzi od razu w chat (główny interfejs)
+    - Slash commands: `/search`, `/compile`, `/settings`, `/help`
+    - Rich formatting (panele, kolory, progress bars)
+    - Autocomplete (Tab), historia (↑/↓), multi-line (Shift+Enter)
+    - Technologie: `rich>=13.0.0`, `prompt-toolkit>=3.0.0`
+    - Szacowany czas: 7-10h (Faza 1-3)
+    - Struktura: `interactive_shell.py`, `commands/*.py`, `ui/*.py`
+
+#### Podsumowanie
+Roadmapa zaktualizowana o nowe priorytety - interactive chat interface w stylu Claude Code jako kolejny duży feature.
+
+---
+
 ## [2025-11-06] - Compile E-book: Tworzenie tematycznych antologii EPUB
 
 #### Dodano
